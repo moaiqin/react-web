@@ -22,9 +22,24 @@ var getRandomPos = (low,height) =>{
 	return Math.ceil(Math.random()*(height-low)+low);
 }
 
+let get3DRandom = () =>{
+  return (Math.random() - 0.5>0? '' : '-') + Math.ceil(Math.random()*30);
+}
 class ImgFigure extends  React.Component {
   constructor (props){
     super(props);
+    this.handleClick = this.handleClick.bind(this);
+  }
+
+  //处理它的点击事件
+  handleClick (ev){
+    if(!this.props.arrange.isCenter){
+       this.props.center();
+    }else{
+       this.props.inverse();
+    }
+    ev.stopPropagation();
+    ev.preventDefault();
   }
 	render (){
 		var styleObj={};
@@ -32,15 +47,24 @@ class ImgFigure extends  React.Component {
 		if(this.props.arrange.pos){
 			styleObj = this.props.arrange.pos;
 		}
+    if(this.props.arrange.rotate){
+      ['Webkit','Moz','O','Ms',''].forEach(function (value){
+        styleObj[value + 'Transform'] = 'rotate('+this.props.arrange.rotate + 'deg )';
+      }.bind(this))
+    }
+    if(this.props.arrange.isCenter){
+      styleObj.zIndex=11;
+    }
+    var  figureClass= 'img-figure';
+    figureClass += this.props.arrange.isInverse ? ' is-inverse' : '';
 
 		return (
-			  <figure className="img-figure" style={ styleObj }>
-			     <img src={this.props.data.imageUrl}
-			        alt={this.props.title}
-			     />
+			  <figure className={figureClass} onClick={this.handleClick} style={ styleObj }>
+			     <img src={this.props.data.imageUrl} alt={this.props.title}/>
 			     <figcaption>
-			     <h2 className="img-title">{this.props.data.desc}</h2>
+			         <h2 className="img-title">{this.props.data.desc}</h2>
 			     </figcaption>
+           <p className="img-back">{this.props.data.desc}</p>
 			  </figure>
 			);
 	}
@@ -70,7 +94,8 @@ class AppComponent extends React.Component {
           pos:{
             left:0,
             top:0
-          }
+          },
+          rotate:0;
         }*/
       ]
     };
@@ -95,14 +120,24 @@ class AppComponent extends React.Component {
   	    imgsArrangeCenterArr = imgsArrangeArr.splice(centerIndex,1);
 
   	    //首先居中centerindexde图片
-  	    imgsArrangeCenterArr[0].pos = centerPos;
+  	    imgsArrangeCenterArr[0]={
+          pos:centerPos,
+          rotate:0,
+          isCenter:true,
+          isInverse:false
+        }
   	var topImgSpliceIndex = Math.ceil(Math.random()*(imgsArrangeArr.length-topImgNum));
   	var imgsArrangeTopArr = imgsArrangeArr.splice(topImgSpliceIndex,topImgNum);
   	    //布局位于上则的图片
   	    imgsArrangeTopArr.forEach(function(value,index){
-  	    	imgsArrangeTopArr[index].pos={
-  	    		top:getRandomPos(vPosRangeTopY[0],vPosRangeTopY[1]),
-  	    		left:getRandomPos(vPosRangeX[0],vPosRangeX[1])
+  	    	imgsArrangeTopArr[index]={
+  	    		pos:{
+              top:getRandomPos(vPosRangeTopY[0],vPosRangeTopY[1]),
+              left:getRandomPos(vPosRangeX[0],vPosRangeX[1])
+            },
+            rotate: get3DRandom(),
+            isCenter:false,
+            isInverse:false
   	    	}
   	    });
 
@@ -115,9 +150,14 @@ class AppComponent extends React.Component {
   	    	}else{
   	    		hPosLorR = hPosRangeRightSecx;
   	    	}
-  	    	imgsArrangeArr[i].pos={
-  	    		top: getRandomPos(hPosRangeY[0],hPosRangeY[1]),
-  	    		left:getRandomPos(hPosLorR[0],hPosLorR[1])
+  	    	imgsArrangeArr[i]={
+  	    		pos:{
+              top: getRandomPos(hPosRangeY[0],hPosRangeY[1]),
+              left:getRandomPos(hPosLorR[0],hPosLorR[1])
+            },
+            rotate:get3DRandom(),
+            isCenter:false,
+            isInverse:false
   	    	}
   	    }
 
@@ -130,6 +170,26 @@ class AppComponent extends React.Component {
   	    	imgsArrangeArr:imgsArrangeArr
   	    });
   }
+
+  //翻转图片的函数
+  inverse (index){
+    return () => {
+      let imgsArrangeArr = this.state.imgsArrangeArr;
+      imgsArrangeArr[index].isInverse = !imgsArrangeArr[index].isInverse;
+      this.setState({
+        imgsArrangeArr: imgsArrangeArr
+      });
+    };
+  }
+
+  //图片中心居委
+
+  center (index){
+      return () => {
+        this.rearrange(index);
+      }
+  }
+
   //组件加载后，为每张图片计算相应de位置
   componentDidMount (){
   	//首先拿到舞台de大小
@@ -176,10 +236,13 @@ class AppComponent extends React.Component {
          		pos:{
          			left:0,
          			top:0
-         		}
+         		},
+            rotate:0,
+            isInverse: false,
+            isCenter:false
          	}
          }
-         imgFigures.push(<ImgFigure data={value} key={index} className="test" ref={'imgFigure'+index} arrange={this.state.imgsArrangeArr[index]}/>);
+         imgFigures.push(<ImgFigure data={value} key={index} center={this.center(index)} className="test" ref={'imgFigure'+index} inverse={this.inverse(index)} arrange={this.state.imgsArrangeArr[index]}/>);
       }.bind(this));
     return (
       <section className="stage" ref="stage">
