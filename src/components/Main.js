@@ -25,6 +25,36 @@ var getRandomPos = (low,height) =>{
 let get3DRandom = () =>{
   return (Math.random() - 0.5>0? '' : '-') + Math.ceil(Math.random()*30);
 }
+
+class ControllerUnit extends React.Component {
+  constructor (props){
+    super(props);
+    this.handleClick = this.handleClick.bind(this);
+  }
+  handleClick (ev){
+    if(!this.props.arrange.isCenter){
+      this.props.center();
+    }else{
+      this.props.inverse();
+    }
+    ev.stopPropagation();
+    ev.preventDefault();
+  }
+  render (){
+
+    var className= 'controller-unit'
+    if (this.props.arrange.isCenter) {
+      className +=' is-center';
+      if(this.props.arrange.isInverse){
+        className +=' is-inverse';
+      }
+    }
+    return (
+      <span className={className} onClick={this.handleClick}></span>
+    );
+  }
+}
+
 class ImgFigure extends  React.Component {
   constructor (props){
     super(props);
@@ -116,7 +146,7 @@ class AppComponent extends React.Component {
   	    vPosRangeX = vPosRange.x,
 
   	    imgsArrangeTopArr = [],
-  	    topImgNum = Math.ceil(Math.random()*2),
+  	    topImgNum = Math.floor(Math.random()*2),
   	    imgsArrangeCenterArr = imgsArrangeArr.splice(centerIndex,1);
 
   	    //首先居中centerindexde图片
@@ -140,7 +170,8 @@ class AppComponent extends React.Component {
             isInverse:false
   	    	}
   	    });
-
+        
+        
   	    //布局两边de突变
   	    for(var i=0,j=imgsArrangeArr.length,k = j / 2; i < j; i++){
   	    	var hPosLorR = null;
@@ -204,7 +235,7 @@ class AppComponent extends React.Component {
   	    imgH = imgFigureDom.scrollHeight,
   	    halfImgW = Math.ceil(imgW/2),
   	    halfImgH = Math.ceil(imgH/2);
-      
+    
   	//计算中心图片的位置
   	this.Constant.centerPos = {
   		left:halfStageW - halfImgW,
@@ -227,7 +258,7 @@ class AppComponent extends React.Component {
 
   }
   render (){
-  	  //let controllerUnits=[];
+  	  let controllerUnits=[];
       let imgFigures=[];
       
       imagesData.forEach(function(value,index){
@@ -243,6 +274,7 @@ class AppComponent extends React.Component {
          	}
          }
          imgFigures.push(<ImgFigure data={value} key={index} center={this.center(index)} className="test" ref={'imgFigure'+index} inverse={this.inverse(index)} arrange={this.state.imgsArrangeArr[index]}/>);
+         controllerUnits.push(<ControllerUnit key={index} center={this.center(index)} className="test" inverse={this.inverse(index)} arrange={this.state.imgsArrangeArr[index]}/>)
       }.bind(this));
     return (
       <section className="stage" ref="stage">
@@ -250,6 +282,7 @@ class AppComponent extends React.Component {
             {imgFigures}
          </section>
          <nav className="controller-nav">
+            {controllerUnits}
          </nav>
       </section>
     );
